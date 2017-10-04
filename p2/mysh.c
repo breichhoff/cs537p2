@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 const char error_message[30] = "An error has occured\n";
+int doWait = 0;
 
 void changeDir(char *userInput){
 
@@ -29,28 +30,47 @@ int callCommand(char *userInput){
     splitInput = strtok_r(NULL, " ", &savePtr);
   }
   args[index] = NULL;
-  if(execvpe(args[0], args) == -1){
+
+  int pid = fork(), status;
+  if((pid == 0) && (execvp(args[0], args) == -1)){
     return 0;
   }
+  
+  else if(doWait == 1) {
+    wait(&status);
+  }
+
+
   free(splitInput);
   free(args);
-  return 1;
+  return 1; 
 }
 
 int main(int argc, char *argv[]){
   if(argc != 1){
-    fprintf(stderr, "Usage: ./mysh");
+    fprintf(stderr, "Usage: ./mysh\n");
     exit(1);
   }
   int quit = 0, commandCount = 1;
   char userInput[129];
   while(!quit){
-    printf("\nmysh (%d)> ", commandCount++);
+    printf("mysh (%d)> ", commandCount++);
     if(fgets(userInput, 129, stdin)==NULL){
       fprintf(stderr, error_message);
     }
     char *newlinePos = strchr(userInput, '\n');
     *newlinePos = '\0';
+    char *andChar = strchr(userInput, '&');
+    
+
+    if(andChar != NULL) {
+      doWait = 0;
+      *andChar = '\0'; 
+    } 
+    else {
+      doWait = 1;
+    }
+
     if(strcmp("cd", userInput) == 0){
       changeDir(userInput);
     }
