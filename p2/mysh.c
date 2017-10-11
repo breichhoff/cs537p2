@@ -39,7 +39,6 @@ void parseInput(char *userInput){
       splitInput = strtok_r(NULL, " ", &savePtr);
       continue;
     }
-
     if(nextIsOut){
       outFile = splitInput;
       nextIsOut = 0;
@@ -95,34 +94,37 @@ void exitProgram(){
 void callPipedCommand(){
   int files[2];
   pipe(files);
-  int pid = fork(), status, sstatus;
-  int spid = fork();
-  if(pid == 0){ //second command  change input file
-    printf("pid\n");
-    close(files[1]);
-    dup2(files[0], 0);
-    if(execvp(secondCommand[0], secondCommand) < 0){
-      fprintf(stderr, error_message);
-      kill(getpid(), SIGTERM);
-    }
-  } else if(spid == 0){ //first command - change output file
-    printf("spid\n");
+  int pid = fork(), status, spid;
+  if(pid != 0){
+    spid = fork();
+  }
+  if(pid == 0 && spid != 0){ //first command  change output file
     close(files[0]);
     dup2(files[1], 1);
     if(execvp(firstCommand[0], firstCommand) < 0){
       fprintf(stderr, error_message);
       kill(getpid(), SIGTERM);
     }
-  }  else{
+
+  } else if(spid == 0){ //second command - change input file
+    char buf[1000];
+    close(files[1]);
+    dup2(files[0], 0);
+    read(files[0], buf, 1000);
+    printf("%s\n", buf);
+    // close(files[0]);
+    if(execvp(secondCommand[0], secondCommand) < 0){
+      fprintf(stderr, error_message);
+      kill(getpid(), SIGTERM);
+    }
+  } else{
     wait(&status);
-    wait(&sstatus);
     // close(files[0]);
     // close(files[1]);
     free(firstCommand);
     free(secondCommand);
     pipedIndex = 0;
   }
-
 }
 //add forking here.
 void callCommand(char **args){
@@ -164,7 +166,6 @@ int main(int argc, char *argv[]){
     if(fgets(userInput, 129, stdin)==NULL){
       fprintf(stderr, error_message);
     }
-    
     char *newlinePos = strchr(userInput, '\n');
     *newlinePos = '\0';
     char *andChar = strchr(userInput, '&');
