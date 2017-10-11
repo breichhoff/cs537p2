@@ -177,17 +177,19 @@ int main(int argc, char *argv[]){
       doWait = 1;
     }
 
-    if(strlen(userInput) != 0) {
+   if(strlen(userInput) != 0) {
       parseInput(userInput);
+      printf("%s\n")
       if(parsedArgs[0] == NULL) {
         continue;
       }
     }
     else {
 
-    continue;
+      continue;
 
-    }
+    } 
+    parseInput(userInput);
     
     if(strcmp("cd", parsedArgs[0]) == 0){
       changeDir(parsedArgs);
